@@ -199,6 +199,7 @@
 ### lk2nd-msm8610
 
 - Huawei C8816
+- Acer Liquid Z220
 
 ## Porting new devices
 
