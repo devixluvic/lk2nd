@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: BSD-3-Clause
+
+#include <skeleton64.dtsi>
+#include <lk2nd.dtsi>
+
+/ {
+	qcom,board-id = <0xb 0x0>;
+	qcom,msm-id = <147 0x10001>, <165 0x10001>, <161 0x10001>, <162 0x10001>,
+				  <163 0x10001>, <164 0x10001>, <166 0x10001>,
+				  <225 0x10001>, <226 0x10001>;
+};
+
+&lk2nd {
+	model = "Acer Z220";
+	compatible = "acer,charmander", "qcom,msm8610", "qcom,qrd", "lk2nd,device";
+
+	lk2nd,dtb-files = "msm8610-acer-z220";
+	lk2nd,match-panel;
+
+	panel {
+		compatible = "acer,z220-panel", "lk2nd,panel";
+	};
+};
