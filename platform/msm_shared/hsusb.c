@@ -943,6 +943,12 @@ int udc_stop(void)
 {
 	uint32_t val;
 
+	/* z220 diag: step-by-step bisect of the teardown. Skipping the
+	 * whole body: if the PHY is alive at the site1 dump, re-enable
+	 * steps one at a time to find the killer.
+	 */
+	return 0;
+
 	/* Flush all primed end points. */
 	writel(0xffffffff, USB_ENDPTFLUSH);
 

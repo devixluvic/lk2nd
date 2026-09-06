@@ -471,10 +471,63 @@ unsigned target_pause_for_battery_charge(void)
 			return 0;
 }
 
+/* z220 diag: bounded ULPI reads stashed in scratch RAM so the mainline
+ * initramfs (/dev/mem) can see the PHY state at bootloader teardown and
+ * right before the kernel jump. Site layout per 0x100 block:
+ *  +0x00 magic (5a5a00ss site<<16), +0x04 wakeup-iters, +0x08 run-iters,
+ *  +0x0c raw viewport, +0x10..0x13 data regs 0..3,
+ *  +0x20 PORTSC, +0x24 USBCMD
+ */
+void z220_ulpi_dump(uint32_t base, uint32_t site);
+
 void target_usb_stop(void)
 {
-	/* Disable VBUS mimicing in the controller. */
-	ulpi_write(ULPI_MISC_A_VBUSVLDEXTSEL | ULPI_MISC_A_VBUSVLDEXT, ULPI_MISC_A_CLEAR);
+	/* z220 diag: the ULPI MISC_A clear (VBUSVLDEXT|VBUSVLDEXTSEL) here
+	 * wedges the 28nm PHY: ULPI reads die right after this while the
+	 * host still has the cable attached. Downstream 3.4 revives the
+	 * PHY at probe; mainline does not. Leave the PHY as-is at
+	 * handoff so the kernel inherits a live PHY.
+	 *
+	 * ulpi_write(ULPI_MISC_A_VBUSVLDEXTSEL | ULPI_MISC_A_VBUSVLDEXT, ULPI_MISC_A_CLEAR);
+	 */
+
+	z220_ulpi_dump(0x0f200000, 1);
+}
+
+void z220_ulpi_dump(uint32_t base, uint32_t site)
+{
+	uint32_t *p = (uint32_t *) base;
+	uint32_t v, reg, i;
+
+	p[0] = 0x5A5A0001u | (site << 16);
+
+	writel(0xA0000000, USB_ULPI_VIEWPORT);
+	i = 200000;
+	while ((readl(USB_ULPI_VIEWPORT) & 0x80000000) && --i) ;
+	p[1] = 200000 - i;
+
+	writel(0x40000000 | (0 << 16), USB_ULPI_VIEWPORT);
+	i = 200000;
+	while ((readl(USB_ULPI_VIEWPORT) & 0x40000000) && --i) ;
+	p[2] = 200000 - i;
+	v = readl(USB_ULPI_VIEWPORT);
+	p[3] = v;
+	p[4] = (v >> 8) & 0xff;
+
+	for (reg = 1; reg < 4; reg++) {
+		writel(0x40000000 | (reg << 16), USB_ULPI_VIEWPORT);
+		i = 200000;
+		while ((readl(USB_ULPI_VIEWPORT) & 0x40000000) && --i) ;
+		p[4 + reg] = (readl(USB_ULPI_VIEWPORT) >> 8) & 0xff;
+	}
+	p[8] = readl(USB_PORTSC);
+	p[9] = readl(USB_USBCMD);
+}
+
+/* real pre-jump implementation, overrides the weak stub in aboot.c */
+void z220_ulpi_dump_boot(void)
+{
+	z220_ulpi_dump(0x0f201000, 2);
 }
 
 void target_usb_init(void)

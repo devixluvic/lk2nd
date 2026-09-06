@@ -1199,6 +1199,10 @@ void generate_atags(unsigned *ptr, const char *cmdline,
 }
 
 typedef void entry_func_ptr(unsigned, unsigned, unsigned*);
+
+/* z220 diag: target hook, stashes ULPI PHY state to scratch RAM pre-jump */
+__WEAK void z220_ulpi_dump_boot(void) {}
+
 void boot_linux(void *kernel, unsigned *tags,
 		const char *cmdline, unsigned machtype,
 		void *ramdisk, unsigned ramdisk_size,
@@ -1208,6 +1212,8 @@ void boot_linux(void *kernel, unsigned *tags,
 #if DEVICE_TREE
 	int ret = 0;
 #endif
+
+	z220_ulpi_dump_boot();
 
 	void (*entry)(unsigned, unsigned, unsigned*) = (entry_func_ptr*)(PA((addr_t)kernel));
 	uint32_t tags_phys = PA((addr_t)tags);
