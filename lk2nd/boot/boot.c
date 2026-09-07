@@ -17,6 +17,17 @@
 #define LK2ND_BOOT_MIN_SIZE (16 * 1024 * 1024)
 #endif
 
+/*
+ * Allow disabling the filesystem scan at build time: LK's ext2 driver
+ * cannot cope with some modern ext4 filesystems and crashes the whole
+ * bootloader while trying to mount them. Devices that only boot via
+ * the Android boot image path (LK2ND_PARTITION_SIZE split) are better
+ * off with the scan disabled entirely.
+ */
+#ifndef LK2ND_EXTLINUX
+#define LK2ND_EXTLINUX 1
+#endif
+
 /**
  * lk2nd_scan_devices() - Scan filesystems and try to boot
  */
@@ -79,5 +90,7 @@ void lk2nd_boot(void)
 		init_done = true;
 	}
 
+#if LK2ND_EXTLINUX
 	lk2nd_scan_devices();
+#endif
 }

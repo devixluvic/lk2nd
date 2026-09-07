@@ -17,6 +17,12 @@ LK2ND_PARTITION_BASE ?= boot
 LK2ND_PARTITION_NAME ?= lk2nd
 LK2ND_PARTITION_SIZE ?= 512*1024
 
+# LK's ext2 driver crashes on some modern ext4 rootfs. Allow disabling the
+# filesystem/extlinux boot path at build time (LK2ND_EXTLINUX=0) so lk2nd
+# only boots through the Android boot image path.
+LK2ND_EXTLINUX ?= 1
+DEFINES += LK2ND_EXTLINUX=$(LK2ND_EXTLINUX)
+
 # The primary bootloader will implement LONG_PRESS_POWER_ON if needed.
 # If we do it again in lk2nd we might accidentally shutdown the device because
 # the user needs to keep the power key pressed for *really* long.
